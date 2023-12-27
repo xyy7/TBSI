@@ -1,0 +1,85 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: 当前文件",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: test",
+            "type": "python",
+            "request": "launch",
+            "program": "tracking/test.py",
+            "console": "integratedTerminal",
+            "args": [
+                "tbsi_track",
+                "vitb_256_tbsi_32x4_4e4_lasher_15ep_in1k-2-1",
+                "--dataset_name",
+                "lasher_test",
+                "--threads",
+                "6",
+                "--num_gpus",
+                "1",
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "5",
+            }
+        },
+        {
+            "name": "Python: analysis",
+            "type": "python",
+            "request": "launch",
+            "program": "tracking/analysis_results.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--tracker_name",
+                "tbsi_track",
+                "--tracker_param",
+                "vitb_256_tbsi_32x4_4e4_lasher_15ep_in1k",
+                "--dataset_name",
+                "lasher_test",
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "5",
+            }
+        },
+        {
+            "name": "Python: train",
+            "type": "python",
+            "request": "launch",
+            "program": "tracking/train.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--script",
+                "tbsi_track",
+                "--config",
+                "vitb_256_tbsi_32x4_4e4_lasher_15ep_in1k",
+                "--save_dir",
+                "./output/vitb_256_tbsi_32x4_4e4_lasher_15ep_in1k",
+                "--mode",
+                "single",
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "5",
+            }
+        },
+        {
+            "name": "Python: Attach",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            }
+        },
+    ]
+}
+// python tracking/train.py --script tbsi_track --config vitb_256_tbsi_32x4_4e4_lasher_15ep_in1k --save_dir ./output/vitb_256_tbsi_32x4_4e4_lasher_15ep_in1k --mode multiple --nproc_per_node 4
+//# python tracking/test.py tbsi_track vitb_256_tbsi_32x4_4e4_lasher_15ep_in1k --dataset_name lasher_test --threads 6 --num_gpus 1
+//# python tracking/analysis_results.py --tracker_name tbsi_track --tracker_param vitb_256_tbsi_32x4_4e4_lasher_15ep_in1k --dataset_name lasher_test

@@ -1,18 +1,25 @@
 import os
+
 # loss function related
 from lib.utils.box_ops import giou_loss
 from torch.nn.functional import l1_loss
 from torch.nn import BCEWithLogitsLoss
+
 # train pipeline related
 from lib.train.trainers import LTRTrainer
+
 # distributed training related
 from torch.nn.parallel import DistributedDataParallel as DDP
+
 # some more advanced functions
 from .base_functions import *
+
 # network related
 from lib.models.tbsi_track import build_tbsi_track
+
 # forward propagation related
 from lib.train.actors import TBSITrackActor
+
 # for import modules
 import importlib
 
@@ -20,25 +27,25 @@ from ..utils.focal_loss import FocalLoss
 
 
 def run(settings):
-    settings.description = 'Training script for TBSI RGB-T Tracker'
+    settings.description = "Training script for TBSI RGB-T Tracker"
 
     # update the default configs with config file
     if not os.path.exists(settings.cfg_file):
         raise ValueError("%s doesn't exist." % settings.cfg_file)
     config_module = importlib.import_module("lib.config.%s.config" % settings.script_name)
     cfg = config_module.cfg
-    config_module.update_config_from_file(settings.cfg_file)
+    config_module.update_config_from_file(settings.cfg_file)  # 最开始的配置，根据要训练的配置更新一遍【配置很多】
     if settings.local_rank in [-1, 0]:
         print("New configuration is shown below.")
         for key in cfg.keys():
             print("%s configuration:" % key, cfg[key])
-            print('\n')
+            print("\n")
 
     # update settings based on cfg
-    update_settings(settings, cfg)
+    update_settings(settings, cfg)  # 已经更新完的配置，就是完整的配置了，赋值给cfg
 
     # Record the training log
-    log_dir = os.path.join(settings.save_dir, 'logs')
+    log_dir = os.path.join(settings.save_dir, "logs")
     if settings.local_rank in [-1, 0]:
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
@@ -70,8 +77,8 @@ def run(settings):
     # Loss functions and Actors
     if settings.script_name == "tbsi_track":
         focal_loss = FocalLoss()
-        objective = {'giou': giou_loss, 'l1': l1_loss, 'focal': focal_loss, 'cls': BCEWithLogitsLoss()}
-        loss_weight = {'giou': cfg.TRAIN.GIOU_WEIGHT, 'l1': cfg.TRAIN.L1_WEIGHT, 'focal': 1., 'cls': 1.0}
+        objective = {"giou": giou_loss, "l1": l1_loss, "focal": focal_loss, "cls": BCEWithLogitsLoss()}
+        loss_weight = {"giou": cfg.TRAIN.GIOU_WEIGHT, "l1": cfg.TRAIN.L1_WEIGHT, "focal": 1.0, "cls": 1.0}
         actor = TBSITrackActor(net=net, objective=objective, loss_weight=loss_weight, settings=settings, cfg=cfg)
     else:
         raise ValueError("illegal script name")

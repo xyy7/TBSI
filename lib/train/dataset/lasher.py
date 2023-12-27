@@ -1,18 +1,20 @@
+import csv
 import os
 import os.path
-import numpy as np
-import torch
-import csv
-import pandas
 import random
 from collections import OrderedDict
-from .base_video_dataset import BaseVideoDataset
-from lib.train.data import jpeg4py_loader
+
+import numpy as np
+import pandas
+import torch
 from lib.train.admin import env_settings
+from lib.train.data import jpeg4py_loader
+
+from .base_video_dataset import BaseVideoDataset
 
 
 class LasHeR(BaseVideoDataset):
-    """ LasHeR dataset for RGB-T tracking.
+    """LasHeR dataset for RGB-T tracking.
 
     Publication:
         LasHeR: A Large-scale High-diversity Benchmark for RGBT Tracking
@@ -34,13 +36,13 @@ class LasHeR(BaseVideoDataset):
             data_fraction - Fraction of dataset to be used. The complete dataset is used by default
         """
         root = env_settings().lasher_dir if root is None else root
-        super().__init__('LasHeR_add', root, image_loader)
+        super().__init__("LasHeR_add", root, image_loader)
 
         # all folders inside the root
         self.sequence_list = self._get_sequence_list(split)
 
         if data_fraction is not None:
-            self.sequence_list = random.sample(self.sequence_list, int(len(self.sequence_list)*data_fraction))
+            self.sequence_list = random.sample(self.sequence_list, int(len(self.sequence_list) * data_fraction))
 
         self.sequence_meta_info = self._load_meta_info()
         self.seq_per_class = self._build_seq_per_class()
@@ -49,7 +51,7 @@ class LasHeR(BaseVideoDataset):
         self.class_list.sort()
 
     def get_name(self):
-        return 'lasher'
+        return "lasher"
 
     def has_class_info(self):
         return True
@@ -63,26 +65,26 @@ class LasHeR(BaseVideoDataset):
 
     def _read_meta(self, seq_path):
         try:
-            with open(os.path.join(seq_path, 'meta_info.ini')) as f:
+            with open(os.path.join(seq_path, "meta_info.ini")) as f:
                 meta_info = f.readlines()
-            object_meta = OrderedDict({'object_class_name': meta_info[5].split(': ')[-1][:-1],
-                                       'motion_class': meta_info[6].split(': ')[-1][:-1],
-                                       'major_class': meta_info[7].split(': ')[-1][:-1],
-                                       'root_class': meta_info[8].split(': ')[-1][:-1],
-                                       'motion_adverb': meta_info[9].split(': ')[-1][:-1]})
+            object_meta = OrderedDict(
+                {
+                    "object_class_name": meta_info[5].split(": ")[-1][:-1],
+                    "motion_class": meta_info[6].split(": ")[-1][:-1],
+                    "major_class": meta_info[7].split(": ")[-1][:-1],
+                    "root_class": meta_info[8].split(": ")[-1][:-1],
+                    "motion_adverb": meta_info[9].split(": ")[-1][:-1],
+                }
+            )
         except:
-            object_meta = OrderedDict({'object_class_name': None,
-                                       'motion_class': None,
-                                       'major_class': None,
-                                       'root_class': None,
-                                       'motion_adverb': None})
+            object_meta = OrderedDict({"object_class_name": None, "motion_class": None, "major_class": None, "root_class": None, "motion_adverb": None})
         return object_meta
 
     def _build_seq_per_class(self):
         seq_per_class = {}
 
         for i, s in enumerate(self.sequence_list):
-            object_class = self.sequence_meta_info[s]['object_class_name']
+            object_class = self.sequence_meta_info[s]["object_class_name"]
             if object_class in seq_per_class:
                 seq_per_class[object_class].append(i)
             else:
@@ -94,18 +96,20 @@ class LasHeR(BaseVideoDataset):
         return self.seq_per_class[class_name]
 
     def _get_sequence_list(self, split):
-        if split == 'test':
-            with open(os.path.join(self.root, '..', 'testingsetList.txt')) as f:
+        if split == "test":
+            with open("/data/xyy/lasher/testingsetList.txt") as f:
+                # with open(os.path.join(self.root, '..', 'testingsetList.txt')) as f:
                 dir_list = list(csv.reader(f))
         else:
-            with open(os.path.join(self.root, '..', 'trainingsetList.txt')) as f:
+            # with open(os.path.join(self.root, '..', 'trainingsetList.txt')) as f:
+            with open("/data/xyy/lasher/trainingsetList.txt") as f:
                 dir_list = list(csv.reader(f))
         dir_list = [dir_name[0] for dir_name in dir_list]
         return dir_list
 
     def _read_bb_anno(self, seq_path):
         bb_anno_file = os.path.join(seq_path, "init.txt")
-        gt = pandas.read_csv(bb_anno_file, delimiter=',', header=None, dtype=np.float32, na_filter=False, low_memory=False).values
+        gt = pandas.read_csv(bb_anno_file, delimiter=",", header=None, dtype=np.float32, na_filter=False, low_memory=False).values
         return torch.tensor(gt)
 
     def _read_target_visible(self, seq_path):
@@ -113,12 +117,12 @@ class LasHeR(BaseVideoDataset):
         occlusion_file = os.path.join(seq_path, "absence.label")
         cover_file = os.path.join(seq_path, "cover.label")
 
-        with open(occlusion_file, 'r', newline='') as f:
+        with open(occlusion_file, "r", newline="") as f:
             occlusion = torch.ByteTensor([int(v[0]) for v in csv.reader(f)])
-        with open(cover_file, 'r', newline='') as f:
+        with open(cover_file, "r", newline="") as f:
             cover = torch.ByteTensor([int(v[0]) for v in csv.reader(f)])
 
-        target_visible = ~occlusion & (cover>0).byte()
+        target_visible = ~occlusion & (cover > 0).byte()
 
         visible_ratio = cover.float() / 8
         return target_visible, visible_ratio
@@ -134,22 +138,22 @@ class LasHeR(BaseVideoDataset):
         visible = torch.ByteTensor([1 for v in range(len(bbox))])
         visible_ratio = torch.ByteTensor([1 for v in range(len(bbox))])
 
-        return {'bbox': bbox, 'valid': valid, 'visible': visible, 'visible_ratio': visible_ratio}
+        return {"bbox": bbox, "valid": valid, "visible": visible, "visible_ratio": visible_ratio}
 
     def _get_frame_path(self, seq_path, frame_id):
-        vis_frame_names = sorted(os.listdir(os.path.join(seq_path, 'visible')))
-        inf_frame_names = sorted(os.listdir(os.path.join(seq_path, 'infrared')))
+        vis_frame_names = sorted(os.listdir(os.path.join(seq_path, "visible")))
+        inf_frame_names = sorted(os.listdir(os.path.join(seq_path, "infrared")))
 
-        return os.path.join(seq_path, 'visible', vis_frame_names[frame_id]), os.path.join(seq_path, 'infrared', inf_frame_names[frame_id])
+        return os.path.join(seq_path, "visible", vis_frame_names[frame_id]), os.path.join(seq_path, "infrared", inf_frame_names[frame_id])
 
     def _get_frame(self, seq_path, frame_id):
         path = self._get_frame_path(seq_path, frame_id)
-        return np.concatenate((self.image_loader(path[0]),self.image_loader(path[1])), 2)
+        return np.concatenate((self.image_loader(path[0]), self.image_loader(path[1])), 2)
 
     def get_class_name(self, seq_id):
         obj_meta = self.sequence_meta_info[self.sequence_list[seq_id]]
 
-        return obj_meta['object_class_name']
+        return obj_meta["object_class_name"]
 
     def get_frames(self, seq_id, frame_ids, anno=None):
         seq_path = self._get_sequence_path(seq_id)

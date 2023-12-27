@@ -1,16 +1,21 @@
-import _init_paths
 import matplotlib.pyplot as plt
+
+import _init_paths
+
 plt.rcParams['figure.figsize'] = [8, 8]
 
-from lib.test.analysis.plot_results import plot_results, print_results, print_per_sequence_results
-from lib.test.evaluation import get_dataset, trackerlist
 import argparse
+
+from lib.test.analysis.plot_results import (plot_results,
+                                            print_per_sequence_results,
+                                            print_results)
+from lib.test.evaluation import get_dataset, trackerlist
 
 parser = argparse.ArgumentParser(description='Run tracker on sequence or dataset.')
 parser.add_argument('--tracker_name', default='tbsi_track')
 parser.add_argument('--tracker_param', type=str, help='Name of config file.')
 parser.add_argument('--dataset_name', type=str, help='Name of config file.')
-parser.add_argument('--runid', type=int, default=None, help='The run id.')
+parser.add_argument('--runid', type=int, default=1, help='The run id.')
 # parser.add_argument('--run_ids', type=str, help='Name of config file.')
 # parser.add_argument('--run_ids', nargs='+', help='<Required> Set flag', required=True)
 args = parser.parse_args()

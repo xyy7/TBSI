@@ -1,17 +1,16 @@
 import importlib
 import os
-from collections import OrderedDict
-from lib.test.evaluation.environment import env_settings
 import time
-import cv2 as cv
-
-from lib.utils.lmdb_utils import decode_img
+from collections import OrderedDict
 from pathlib import Path
+
+import cv2 as cv
 import numpy as np
+from lib.test.evaluation.environment import env_settings
+from lib.utils.lmdb_utils import decode_img
 
 
-def trackerlist(name: str, parameter_name: str, dataset_name: str, run_ids = None, display_name: str = None,
-                result_only=False):
+def trackerlist(name: str, parameter_name: str, dataset_name: str, run_ids=None, display_name: str = None, result_only=False):
     """Generate list of trackers.
     args:
         name: Name of tracking method.
@@ -33,8 +32,7 @@ class Tracker:
         display_name: Name to be displayed in the result plots.
     """
 
-    def __init__(self, name: str, parameter_name: str, dataset_name: str, run_id: int = None, display_name: str = None,
-                 result_only=False):
+    def __init__(self, name: str, parameter_name: str, dataset_name: str, run_id: int = None, display_name: str = None, result_only=False):
         assert run_id is None or isinstance(run_id, str) or isinstance(run_id, int)
 
         self.name = name
@@ -45,16 +43,15 @@ class Tracker:
 
         env = env_settings()
         if self.run_id is None:
-            self.results_dir = '{}/{}/{}'.format(env.results_path, self.name, self.parameter_name)
+            self.results_dir = "{}/{}/{}".format(env.results_path, self.name, self.parameter_name)
         else:
-            self.results_dir = '{}/{}/{}_{}'.format(env.results_path, self.name, self.parameter_name, self.run_id)
+            self.results_dir = "{}/{}/{}_{}".format(env.results_path, self.name, self.parameter_name, self.run_id)
         if result_only:
-            self.results_dir = '{}/{}'.format(env.results_path, self.name)
+            self.results_dir = "{}/{}".format(env.results_path, self.name)
 
-        tracker_module_abspath = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                              '..', 'tracker', '%s.py' % self.name))
+        tracker_module_abspath = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tracker", "%s.py" % self.name))
         if os.path.isfile(tracker_module_abspath):
-            tracker_module = importlib.import_module('lib.test.tracker.{}'.format(self.name))
+            tracker_module = importlib.import_module("lib.test.tracker.{}".format(self.name))
             self.tracker_class = tracker_module.get_tracker_class()
         else:
             self.tracker_class = None
@@ -74,12 +71,14 @@ class Tracker:
         params = self.get_parameters()
         run_id = int(run_id)
         from lib.test.evaluation.environment import env_settings
-        params.checkpoint = os.path.join(env_settings().save_dir, "%s/checkpoints/train/tbsi_track/%s/TBSITrack_ep%04d.pth.tar" %
-                                     (name, name, run_id))
+
+        # params.checkpoint = os.path.join(env_settings().save_dir, "%s/checkpoints/train/tbsi_track/%s/TBSITrack_ep%04d.pth.tar" %
+        #                              (name, name, run_id))
+        params.checkpoint = "/home/xyy/TBSI/output/vitb_256_tbsi_32x4_4e4_lasher_15ep_in1k/checkpoints/TBSITrack_IN1K.pth.tar"
 
         debug_ = debug
         if debug is None:
-            debug_ = getattr(params, 'debug', 0)
+            debug_ = getattr(params, "debug", 0)
 
         params.debug = debug_
 
@@ -105,11 +104,10 @@ class Tracker:
         # time[i] is either the processing time for frame i, or an OrderedDict containing processing times for each
         # object in frame i
 
-        output = {'target_bbox': [],
-                  'time': []}
+        output = {"target_bbox": [], "time": []}
         if tracker.params.save_all_boxes:
-            output['all_boxes'] = []
-            output['all_scores'] = []
+            output["all_boxes"] = []
+            output["all_scores"] = []
 
         def _store_outputs(tracker_out: dict, defaults=None):
             defaults = {} if defaults is None else defaults
@@ -129,11 +127,10 @@ class Tracker:
             out = {}
 
         prev_output = OrderedDict(out)
-        init_default = {'target_bbox': init_info.get('init_bbox'),
-                        'time': time.time() - start_time}
+        init_default = {"target_bbox": init_info.get("init_bbox"), "time": time.time() - start_time}
         if tracker.params.save_all_boxes:
-            init_default['all_boxes'] = out['all_boxes']
-            init_default['all_scores'] = out['all_scores']
+            init_default["all_boxes"] = out["all_boxes"]
+            init_default["all_scores"] = out["all_scores"]
 
         _store_outputs(out, init_default)
 
@@ -145,15 +142,15 @@ class Tracker:
             start_time = time.time()
 
             info = seq.frame_info(frame_num)
-            info['previous_output'] = prev_output
+            info["previous_output"] = prev_output
 
             if len(seq.ground_truth_rect) > 1:
-                info['gt_bbox'] = seq.ground_truth_rect[frame_num]
+                info["gt_bbox"] = seq.ground_truth_rect[frame_num]
             out = tracker.track(image, info)
             prev_output = OrderedDict(out)
-            _store_outputs(out, {'time': time.time() - start_time})
+            _store_outputs(out, {"time": time.time() - start_time})
 
-        for key in ['target_bbox', 'all_boxes', 'all_scores']:
+        for key in ["target_bbox", "all_boxes", "all_scores"]:
             if key in output and len(output[key]) <= 1:
                 output.pop(key)
 
@@ -169,22 +166,22 @@ class Tracker:
 
         debug_ = debug
         if debug is None:
-            debug_ = getattr(params, 'debug', 0)
+            debug_ = getattr(params, "debug", 0)
         params.debug = debug_
 
         params.tracker_name = self.name
         params.param_name = self.parameter_name
         # self._init_visdom(visdom_info, debug_)
 
-        multiobj_mode = getattr(params, 'multiobj_mode', getattr(self.tracker_class, 'multiobj_mode', 'default'))
+        multiobj_mode = getattr(params, "multiobj_mode", getattr(self.tracker_class, "multiobj_mode", "default"))
 
-        if multiobj_mode == 'default':
+        if multiobj_mode == "default":
             tracker = self.create_tracker(params)
 
-        elif multiobj_mode == 'parallel':
+        elif multiobj_mode == "parallel":
             tracker = MultiObjectWrapper(self.tracker_class, params, self.visdom, fast_load=True)
         else:
-            raise ValueError('Unknown multi object mode {}'.format(multiobj_mode))
+            raise ValueError("Unknown multi object mode {}".format(multiobj_mode))
 
         assert os.path.isfile(videofilepath), "Invalid param {}".format(videofilepath)
         ", videofilepath must be a valid videofile"
@@ -192,14 +189,14 @@ class Tracker:
         output_boxes = []
 
         cap = cv.VideoCapture(videofilepath)
-        display_name = 'Display: ' + tracker.params.tracker_name
+        display_name = "Display: " + tracker.params.tracker_name
         cv.namedWindow(display_name, cv.WINDOW_NORMAL | cv.WINDOW_KEEPRATIO)
         cv.resizeWindow(display_name, 960, 720)
         success, frame = cap.read()
         cv.imshow(display_name, frame)
 
         def _build_init_info(box):
-            return {'init_bbox': box}
+            return {"init_bbox": box}
 
         if success is not True:
             print("Read frame from {} failed.".format(videofilepath))
@@ -214,8 +211,7 @@ class Tracker:
                 # cv.waitKey()
                 frame_disp = frame.copy()
 
-                cv.putText(frame_disp, 'Select target ROI and press ENTER', (20, 30), cv.FONT_HERSHEY_COMPLEX_SMALL,
-                           1.5, (0, 0, 0), 1)
+                cv.putText(frame_disp, "Select target ROI and press ENTER", (20, 30), cv.FONT_HERSHEY_COMPLEX_SMALL, 1.5, (0, 0, 0), 1)
 
                 x, y, w, h = cv.selectROI(display_name, frame_disp, fromCenter=False)
                 init_state = [x, y, w, h]
@@ -233,31 +229,26 @@ class Tracker:
 
             # Draw box
             out = tracker.track(frame)
-            state = [int(s) for s in out['target_bbox']]
+            state = [int(s) for s in out["target_bbox"]]
             output_boxes.append(state)
 
-            cv.rectangle(frame_disp, (state[0], state[1]), (state[2] + state[0], state[3] + state[1]),
-                         (0, 255, 0), 5)
+            cv.rectangle(frame_disp, (state[0], state[1]), (state[2] + state[0], state[3] + state[1]), (0, 255, 0), 5)
 
             font_color = (0, 0, 0)
-            cv.putText(frame_disp, 'Tracking!', (20, 30), cv.FONT_HERSHEY_COMPLEX_SMALL, 1,
-                       font_color, 1)
-            cv.putText(frame_disp, 'Press r to reset', (20, 55), cv.FONT_HERSHEY_COMPLEX_SMALL, 1,
-                       font_color, 1)
-            cv.putText(frame_disp, 'Press q to quit', (20, 80), cv.FONT_HERSHEY_COMPLEX_SMALL, 1,
-                       font_color, 1)
+            cv.putText(frame_disp, "Tracking!", (20, 30), cv.FONT_HERSHEY_COMPLEX_SMALL, 1, font_color, 1)
+            cv.putText(frame_disp, "Press r to reset", (20, 55), cv.FONT_HERSHEY_COMPLEX_SMALL, 1, font_color, 1)
+            cv.putText(frame_disp, "Press q to quit", (20, 80), cv.FONT_HERSHEY_COMPLEX_SMALL, 1, font_color, 1)
 
             # Display the resulting frame
             cv.imshow(display_name, frame_disp)
             key = cv.waitKey(1)
-            if key == ord('q'):
+            if key == ord("q"):
                 break
-            elif key == ord('r'):
+            elif key == ord("r"):
                 ret, frame = cap.read()
                 frame_disp = frame.copy()
 
-                cv.putText(frame_disp, 'Select target ROI and press ENTER', (20, 30), cv.FONT_HERSHEY_COMPLEX_SMALL, 1.5,
-                           (0, 0, 0), 1)
+                cv.putText(frame_disp, "Select target ROI and press ENTER", (20, 30), cv.FONT_HERSHEY_COMPLEX_SMALL, 1.5, (0, 0, 0), 1)
 
                 cv.imshow(display_name, frame_disp)
                 x, y, w, h = cv.selectROI(display_name, frame_disp, fromCenter=False)
@@ -273,16 +264,15 @@ class Tracker:
             if not os.path.exists(self.results_dir):
                 os.makedirs(self.results_dir)
             video_name = Path(videofilepath).stem
-            base_results_path = os.path.join(self.results_dir, 'video_{}'.format(video_name))
+            base_results_path = os.path.join(self.results_dir, "video_{}".format(video_name))
 
             tracked_bb = np.array(output_boxes).astype(int)
-            bbox_file = '{}.txt'.format(base_results_path)
-            np.savetxt(bbox_file, tracked_bb, delimiter='\t', fmt='%d')
-
+            bbox_file = "{}.txt".format(base_results_path)
+            np.savetxt(bbox_file, tracked_bb, delimiter="\t", fmt="%d")
 
     def get_parameters(self):
         """Get parameters."""
-        param_module = importlib.import_module('lib.test.parameter.{}'.format(self.name))
+        param_module = importlib.import_module("lib.test.parameter.{}".format(self.name))
         params = param_module.parameters(self.parameter_name)
         return params
 
@@ -294,6 +284,3 @@ class Tracker:
             return decode_img(image_file[0], image_file[1])
         else:
             raise ValueError("type of image_file should be str or list")
-
-
-
